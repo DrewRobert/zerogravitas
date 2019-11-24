@@ -7,6 +7,7 @@ public class Playlist {
 	public VideoSegment videos;
 	boolean system;      // when TRUE this is actually stored in S3 bucket
 	
+	//Create new playlist without any videos in it
 	public Playlist (String name) {
 		this.name = name;
 	}

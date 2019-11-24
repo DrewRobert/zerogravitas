@@ -22,7 +22,7 @@ public class PlaylistDAO {
         
         try {
             Playlist playlist = null;
-            PreparedStatement ps = conn.prepareStatement("SELECT * FROM constants WHERE name=?;");
+            PreparedStatement ps = conn.prepareStatement("SELECT * FROM playlists WHERE name=?;");
             ps.setString(1,  name);
             ResultSet resultSet = ps.executeQuery();
             
@@ -36,13 +36,13 @@ public class PlaylistDAO {
 
         } catch (Exception e) {
         	e.printStackTrace();
-            throw new Exception("Failed in getting constant: " + e.getMessage());
+            throw new Exception("Failed in getting playlist: " + e.getMessage());
         }
     }
     
     public boolean updatePlaylist(Playlist playlist) throws Exception {
         try {
-        	String query = "UPDATE constants SET value=? WHERE name=?;";
+        	String query = "UPDATE playlists SET value=? WHERE name=?;";
         	PreparedStatement ps = conn.prepareStatement(query);
             //ps.setDouble(1, playlist.value);
             ps.setString(2, playlist.name);
