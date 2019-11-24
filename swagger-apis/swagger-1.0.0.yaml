@@ -1,0 +1,441 @@
+swagger: '2.0'
+info:
+  description: This API is for our group Software Engineering Project
+  version: 1.0.0
+  title: Star Trek Video Maker
+  # put the contact info for your development or API team
+  contact:
+    email: jbpinzer@wpi.edu
+
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+
+# tags are used for organizing operations
+tags:
+- name: admins
+  description: Secured Admin-only calls
+- name: participants
+  description: Operations available to regular users
+
+paths:
+  /segments:
+    get:
+      tags:
+      - participants
+      - admins
+      summary: return all the video segments in the library
+      operationId: getSegments
+      description: Get all of the segments in all available libraries
+      produces:
+      - application/json
+      parameters:
+        - in: query
+          name: local
+          description: set to true to override default and return only local segments, if both are true, will return both local and remote segments
+          type: boolean
+        - in: query
+          name: remote
+          description: set to true to override default and return only remote segments, if both are true, will return both local and remote segments
+          type: boolean
+      responses:
+        200:
+          description: successfully retreived all video segments
+        400:
+          description: couldn't retrieve the video segments
+  
+  /playlists:
+    get:
+      tags:
+      - participants
+      - admins
+      summary: return all the playlists in the library
+      operationId: getPlaylists
+      description: Get all of the playlists that have been created in the library
+      produces:
+      - application/json
+      responses:
+        200:
+          description: successfully retreived all playlists
+        400:
+          description: couldn't retreive any playlists
+          
+  /segment:
+    post:
+      tags:
+      - participants
+      - admins
+      summary: upload a video segment
+      operationId: uploadSegment
+      description: Upload a video to the local library so it can be added to a playlist
+      consumes:
+      - video/ogg
+      produces:
+      - application/json
+      parameters:
+      - in: body
+        name: VideoSegment
+        description: the video segment to be uploaded
+        required: true
+        schema:
+          $ref: '#/definitions/VideoSegment'
+      responses:
+        201:
+          description: video segment uploaded
+        400:
+          description: video was corrupt / not a video
+        409:
+          description: video segment already existed
+    delete:
+      tags:
+      - participants
+      - admins
+      summary: delete a video segment from the library
+      operationId: deleteSegment
+      description: Delete a video segment from the library
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - in: body
+        name: DeleteSegmentRequest
+        description: delete a video segment
+        required: true
+        schema:
+          $ref: '#/definitions/DeleteRequest'
+      responses:
+        200:
+          description: successfully deleted the segment
+        400:
+          description: couldn't delete segment
+        404:
+          description: video wasn't found to delete
+          
+  /appendSegment:
+    post:
+      tags:
+      - participants
+      - admins
+      summary: append a video to the playlist
+      operationId: appendSegment
+      description: Append a video segment to a given playlist
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - in: query
+        name: VideoSegmentId
+        description: the id of the video segment to append to the playlist
+        required: true
+        type: string
+        format: uuid
+      - in: body
+        name: Playlist
+        description: the playlist to append the segment to
+        required: true
+        schema:
+          $ref: '#/definitions/Playlist'
+      responses:
+        200:
+          description: video successfully added to playlist
+        400:
+          description: couldn't add segment to playlist
+        404:
+          description: couldn't find segment/playlist
+          
+    delete:
+      tags:
+        - participants
+        - admins
+      summary: remove a video from the playlist
+      operationId: removeSegment
+      description: Remove a video segment from the given playlist
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - in: query
+        name: VideoSegmentId
+        description: the id of the video segment to append to the playlist
+        required: true
+        type: string
+        format: uuid
+      - in: body
+        name: Playlist
+        description: the playlist to append the segment to
+        required: true
+        schema:
+          $ref: '#/definitions/Playlist'
+      responses:
+        200:
+          description: video successfully added to playlist
+        400:
+          description: couldn't add segment to playlist
+        404:
+          description: couldn't find segment/playlist
+    
+  /searchSegments:
+    post:
+      tags:
+        - participants
+        - admins
+      summary: search for a video segment
+      operationId: searchSegments
+      description: Search for a video segment based off of character and text
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - in: query
+        name: character
+        description: Given character to search for in the segment
+        type: string
+      - in: query
+        name: text
+        description: Given text to search for in the segment
+        type: string
+      responses:
+        200:
+          description: found a segment that matches search parameters
+        404:
+          description: no matching segment found
+  
+  /segmentAccess:
+    post:
+      tags:
+        - admins
+      summary: make a segment remotely available
+      operationId: segmentAccess
+      description: Make a local video segment available to sites with this one registered
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - in: body
+        name: SegmentAccessRequest
+        description: Give access to a video segment
+        required: true
+        schema:
+          $ref: '#/definitions/SegmentAccessRequest'
+      responses:
+        200:
+          description: successfully made the segment accessible
+        400:
+          description: couldn't find the segment
+        409:
+          description: segment is already accessible
+    delete:
+      tags:
+        - admins
+      summary: remove a segment from being remotely accessible
+      operationId: removeSegmentAccess
+      description: Make a segment not remotely accessible
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - in: body
+        name: RemoveSegmentAccessRequest
+        description: Remove a segment from being remotely accessible
+        required: true
+        schema:
+          $ref: '#/definitions/DeleteRequest'
+      responses:
+        200:
+          description: successfully marked the segment as not remotely accessible
+        400:
+          description: couldn't find the segment
+        404:
+          description: segment wasn't remotely accessible
+      
+  
+  /playlist:
+    post:
+      tags:
+        - participants
+        - admins
+      summary: create a new playlist
+      operationId: createPlaylist
+      description: Creates a new playlist in the library
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - in: body
+        name: CreatePlaylistRequest
+        description: create a playlist
+        required: true
+        schema:
+          $ref: '#/definitions/Playlist'
+      responses:
+        200:
+          description: successfully created the playlist
+        400:
+          description: wasn't able to create the playlist
+    delete:
+      tags:
+        - participants
+      summary: delete a playlist
+      operationId: deletePlaylist
+      description: Delete a playlist in the library
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - in: body
+        name: DeletePlaylistRequest
+        description: delete a playlist
+        required: true
+        schema:
+          $ref: '#/definitions/DeleteRequest'
+      responses:
+        200:
+          description: successfully deleted the playlist
+        400:
+          description: couldn't delete playlist
+        404:
+          description: playlist wasn't found to delete
+  
+  
+  /remoteSite:
+    get:
+      tags:
+        - participants
+        - admins
+      summary: get all the remote sites registered
+      operationId: remoteSites
+      description: Get all of the remote sites that have been registered to this library
+      produces:
+      - application/json
+      responses:
+        200:
+          description: successfully retreived all of the remote sites
+        400:
+          description: couldn't retrieve all of the remote sites
+    post:
+      tags:
+        - admins
+      summary: register a remote site (library)
+      operationId: registerSite
+      description: Register a remote site with a library to add the video segments to the library
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - in: body
+        name: remoteSite
+        description: the url of the remote site to add
+        required: true
+        schema:
+          $ref: '#/definitions/RemoteSite'
+      responses:
+        200:
+          description: remote site registered to library
+        400:
+          description: wasn't given a valid remote site
+        409:
+          description: remote site was already registered
+    delete:
+      tags:
+        - admins
+      summary: remove a registered remote site
+      operationId: remoteRegisteredSite
+      description: Remove a registered remote site from the library
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - in: body
+        name: remoteSite
+        description: the url of the remote site to remove
+        required: true
+        schema:
+          $ref: '#/definitions/DeleteRequest'
+      responses:
+        200:
+          description: removed remote site
+        400:
+          description: wasn't given a valid remote site
+        404:
+          description: remote site wasn't found to remove                                                             
+    
+      
+definitions:
+  VideoSegment:
+    type: object
+    required:
+    - id
+    - text
+    - character
+    - url
+    properties:
+      id:
+        type: string
+        format: uuid
+        example: d290f1ee-6c54-4b01-90e6-d701748f0851
+      text:
+        type: string
+        example: Hello
+      character:
+        type: string
+        example: Spock
+      url:
+        type: string
+        
+  Playlist:
+    type: object
+    required:
+    - id
+    - name
+    properties:
+      id:
+        type: string
+        format: uuid
+        example: d290f1ee-6c54-4b01-90e6-d701748f0851
+      name:
+        type: string
+        example: Favorites
+      segments:
+        type: array
+        items:
+          $ref: '#/definitions/VideoSegment'
+        description: the array of video segments in the playlist, in order
+  DeleteRequest:
+    type: object
+    required:
+    - name
+    properties:
+      name: 
+        type: string
+        
+  SegmentAccessRequest:
+    type: object
+    required:
+    - id
+    properties:
+      id:
+        type: string
+        format: uuid
+    
+  RemoteSite:
+    type: object
+    required:
+    - url
+    properties:
+      url:
+        type: string
+# Added by API Auto Mocking Plugin
+host: virtserver.swaggerhub.com
+basePath: /Zero-Gravitas/SoftEng/1.0.0
+schemes:
+ - https
